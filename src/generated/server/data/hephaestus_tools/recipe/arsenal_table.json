@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "a": "minecraft:smithing_table",
+    "m": "minecraft:anvil",
+    "s": "#minecraft:planks"
+  },
+  "pattern": [
+    "m  ",
+    "sas",
+    "sss"
+  ],
+  "result": {
+    "count": 1,
+    "id": "hephaestus_tools:arsenal_table"
+  }
+}

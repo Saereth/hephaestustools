@@ -1,0 +1,5 @@
+/gamemode survival
+/gamemode creative
+/gamemode survival
+/gamemode creative
+/time set minecraft:day

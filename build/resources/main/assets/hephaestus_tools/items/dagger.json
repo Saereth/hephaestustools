@@ -1,0 +1,36 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "hephaestus_tools:item/tool/dagger",
+        "tints": [
+          {
+            "type": "hephaestus_tools:tool_material",
+            "index": 0
+          },
+          {
+            "type": "hephaestus_tools:tool_material",
+            "index": 1
+          },
+          {
+            "type": "hephaestus_tools:tool_material",
+            "index": 2
+          },
+          {
+            "type": "hephaestus_tools:tool_material",
+            "index": 3
+          }
+        ]
+      },
+      {
+        "type": "minecraft:special",
+        "base": "hephaestus_tools:item/tool/dagger_overlay",
+        "model": {
+          "type": "hephaestus_tools:tool_modifiers"
+        }
+      }
+    ]
+  }
+}

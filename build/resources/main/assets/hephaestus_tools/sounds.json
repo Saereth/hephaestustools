@@ -1,0 +1,24 @@
+{
+  "arsenal_table_open": {
+    "subtitle": "subtitles.hephaestus_tools.arsenal_table_open",
+    "sounds": ["hephaestus_tools:arsenal_table/table_open1", "hephaestus_tools:arsenal_table/table_open2"]
+  },
+  "arsenal_table_close": {
+    "subtitle": "subtitles.hephaestus_tools.arsenal_table_close",
+    "sounds": ["hephaestus_tools:arsenal_table/table_open1", "hephaestus_tools:arsenal_table/table_open2"]
+  },
+  "arsenal_table_craft": {
+    "subtitle": "subtitles.hephaestus_tools.arsenal_table_craft",
+    "sounds": [
+      "hephaestus_tools:arsenal_table/arsenal_table_craft1",
+      "hephaestus_tools:arsenal_table/arsenal_table_craft2",
+      "hephaestus_tools:arsenal_table/arsenal_table_craft3",
+      "hephaestus_tools:arsenal_table/arsenal_table_craft4",
+      "hephaestus_tools:arsenal_table/arsenal_table_craft5"
+    ]
+  },
+  "arsenal_table_craft_hold": {
+    "subtitle": "subtitles.hephaestus_tools.arsenal_table_craft_hold",
+    "sounds": [{ "name": "hephaestus_tools:arsenal_table/crafting_hold_sound", "stream": true }]
+  }
+}
