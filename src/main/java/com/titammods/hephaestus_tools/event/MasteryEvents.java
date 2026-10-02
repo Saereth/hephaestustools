@@ -6,6 +6,8 @@ import com.titammods.hephaestus_tools.table.MasteryLevel;
 import com.titammods.hephaestus_tools.table.MasteryStreak;
 import com.titammods.hephaestus_tools.table.ToolMastery;
 import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
+import com.titammods.hephaestus_tools.tools.aoe.BlockSideHitHandler;
+import com.titammods.hephaestus_tools.tools.aoe.PlayerBlockBreaks;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -29,13 +31,13 @@ import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Predicate;
 
 @EventBusSubscriber(modid = HephaestusTools.MOD_ID)
 public final class MasteryEvents {
@@ -81,16 +83,12 @@ public final class MasteryEvents {
         if (mult != 1f) event.setNewSpeed(event.getNewSpeed() * mult);
     }
 
-    @SubscribeEvent
-    public static void onBlockBreak(BreakBlockEvent event) {
-        if (!(event.getPlayer() instanceof Player p) || p.level().isClientSide()) return;
+    public static void afterBlockBreak(ServerPlayer p, BlockPos pos, BlockState state) {
         ItemStack tool = p.getMainHandItem();
         String m = mastery(tool);
         if (m.isEmpty()) return;
         int lv = MasteryLevel.of(tool);
         Level level = p.level();
-        BlockPos pos = event.getPos();
-        BlockState state = event.getState();
         long now = level.getGameTime();
         boolean srv = p instanceof ServerPlayer && level instanceof ServerLevel;
 
@@ -129,19 +127,19 @@ public final class MasteryEvents {
             }
             case "groundworker" -> {
                 if (!srv) return;
-                var area = MasteryAoe.square(level, p, lv >= 30 ? 2 : 1, MasteryAoe::isEarth);
+                var area = MasteryAoe.square(level, pos, BlockSideHitHandler.getSideHit(p), lv >= 30 ? 2 : 1, MasteryAoe::isEarth);
                 MasteryAoe.breakBlocks((ServerLevel) level, (ServerPlayer) p, tool, area, false);
             }
             case "reaper", "harvest_sweep", "replanter", "green_thumb" -> {
                 if (!srv) return;
                 int r = m.equals("reaper") ? (lv >= 30 ? 4 : lv >= 20 ? 3 : 2) : (lv >= 30 ? 3 : lv >= 20 ? 2 : 1);
-                var area = MasteryAoe.square(level, p, r, MasteryAoe::isMatureCrop);
+                var area = MasteryAoe.square(level, pos, BlockSideHitHandler.getSideHit(p), r, MasteryAoe::isMatureCrop);
                 MasteryAoe.harvestCrops((ServerLevel) level, (ServerPlayer) p, tool, area,
                         m.equals("replanter"), m.equals("green_thumb"));
             }
             case "aftershock" -> {
                 if (!srv || lv < 10) return;
-                BlockPos back = MasteryAoe.behind(level, p);
+                BlockPos back = pos.relative(BlockSideHitHandler.getSideHit(p).getOpposite());
                 if (back != null) {
                     var list = new ArrayList<BlockPos>();
                     list.add(back);
@@ -153,7 +151,9 @@ public final class MasteryEvents {
     }
 
     private static int flood(Level level, Player p, BlockPos origin,
-                             java.util.function.Predicate<BlockState> match, int limit, int range) {
+                             Predicate<BlockState> match, int limit, int range) {
+        if (!(p instanceof ServerPlayer player)) return 0;
+        ItemStack tool = player.getMainHandItem();
         int broken = 0;
         Set<BlockPos> vis = new HashSet<>();
         Queue<BlockPos> q = new ArrayDeque<>();
@@ -164,10 +164,8 @@ public final class MasteryEvents {
             for (int dx = -range; dx <= range; dx++) for (int dy = -range; dy <= range; dy++) for (int dz = -range; dz <= range; dz++) {
                 if (dx == 0 && dy == 0 && dz == 0) continue;
                 BlockPos np = cur.offset(dx, dy, dz);
-                if (vis.contains(np) || np.equals(origin)) continue;
-                if (match.test(level.getBlockState(np))) {
-                    vis.add(np);
-                    level.destroyBlock(np, true, p);
+                if (!vis.add(np) || !level.isInWorldBounds(np) || !level.hasChunkAt(np)) continue;
+                if (match.test(level.getBlockState(np)) && PlayerBlockBreaks.breakExtra(player, tool, np)) {
                     broken++;
                     q.add(np);
                     if (broken >= limit) return broken;

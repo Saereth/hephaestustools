@@ -73,6 +73,7 @@ public final class AoeBox {
     }
 
     private static boolean isEffective(Level world, BlockPos pos, float refHardness, ItemStack stack, IAoeTool tool) {
+        if (!world.isInWorldBounds(pos) || !world.hasChunkAt(pos)) return false;
         BlockState state = world.getBlockState(pos);
         if (state.isAir()) return false;
         float hardness = state.getDestroySpeed(world, pos);

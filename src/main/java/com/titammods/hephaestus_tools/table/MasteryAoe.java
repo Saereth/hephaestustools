@@ -1,5 +1,6 @@
 package com.titammods.hephaestus_tools.table;
 
+import com.titammods.hephaestus_tools.tools.aoe.PlayerBlockBreaks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
@@ -14,7 +15,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -32,16 +32,21 @@ public final class MasteryAoe {
         List<BlockPos> out = new ArrayList<>();
         HitResult hit = Item.getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
         if (!(hit instanceof BlockHitResult brt) || brt.getType() != HitResult.Type.BLOCK || brt.getDirection() == null) return out;
+        return square(level, brt.getBlockPos(), brt.getDirection(), r, match);
+    }
+
+    public static List<BlockPos> square(Level level, BlockPos c, Direction face, int r, Predicate<BlockState> match) {
+        List<BlockPos> out = new ArrayList<>();
         Direction d1, d2;
-        switch (brt.getDirection().getAxis()) {
+        switch (face.getAxis()) {
             case Y -> { d1 = Direction.SOUTH; d2 = Direction.EAST; }
             case X -> { d1 = Direction.UP;    d2 = Direction.SOUTH; }
             default -> { d1 = Direction.UP;   d2 = Direction.EAST; }
         }
-        BlockPos c = brt.getBlockPos();
         for (int i = -r; i <= r; i++) for (int j = -r; j <= r; j++) {
             if (i == 0 && j == 0) continue;
             BlockPos p = c.relative(d1, i).relative(d2, j);
+            if (!level.isInWorldBounds(p) || !level.hasChunkAt(p)) continue;
             BlockState s = level.getBlockState(p);
             if (!level.isEmptyBlock(p) && s.getDestroySpeed(level, p) >= 0 && match.test(s)) out.add(p);
         }
@@ -56,22 +61,7 @@ public final class MasteryAoe {
 
     public static void breakBlocks(ServerLevel level, ServerPlayer player, ItemStack tool, List<BlockPos> positions, boolean freeDurability) {
         for (BlockPos p : positions) {
-            BlockState st = level.getBlockState(p);
-            if (level.isEmptyBlock(p) || !level.hasChunkAt(p) || !st.canHarvestBlock(level, p, player)) continue;
-            Block b = st.getBlock();
-            if (player.getAbilities().instabuild) {
-                if (st.onDestroyedByPlayer(level, p, player, tool, true, st.getFluidState())) b.destroy(level, p, st);
-            } else {
-                BlockEntity be = level.getBlockEntity(p);
-                int xp = st.getExpDrop(level, p, be, player, tool);
-                if (!freeDurability) tool.getItem().mineBlock(tool, level, st, p, player);
-                if (st.onDestroyedByPlayer(level, p, player, tool, true, st.getFluidState())) {
-                    b.destroy(level, p, st);
-                    b.playerDestroy(level, player, p, st, be, tool);
-                    b.popExperience(level, p, xp);
-                }
-            }
-            player.connection.send(new ClientboundBlockUpdatePacket(level, p));
+            PlayerBlockBreaks.breakExtra(player, tool, p);
         }
     }
 

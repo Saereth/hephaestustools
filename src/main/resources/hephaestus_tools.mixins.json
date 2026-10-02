@@ -6,7 +6,8 @@
   "refmap": "hephaestus_tools.refmap.json",
   "mixins": [
     "TableBlockEntityMixin",
-    "CastingTableRecipeMixin"
+    "CastingTableRecipeMixin",
+    "ServerPlayerGameModeMixin"
   ],
   "client": [],
   "injectors": {
