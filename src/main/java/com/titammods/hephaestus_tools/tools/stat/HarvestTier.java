@@ -37,10 +37,7 @@ public enum HarvestTier {
     }
 
     public boolean canHarvest(BlockState state) {
-        if (state.is(BlockTags.NEEDS_DIAMOND_TOOL)) return miningLevel >= 3;
-        if (state.is(BlockTags.NEEDS_IRON_TOOL)) return miningLevel >= 2;
-        if (state.is(BlockTags.NEEDS_STONE_TOOL)) return miningLevel >= 1;
-        return true;
+        return !state.is(incorrectForTag);
     }
 
     public static HarvestTier byOrdinal(int ordinal) {

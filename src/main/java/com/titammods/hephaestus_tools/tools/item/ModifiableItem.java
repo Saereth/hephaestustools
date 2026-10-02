@@ -153,8 +153,6 @@ public abstract class ModifiableItem extends Item {
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
         if (!ToolStack.isInitialized(stack) || ToolStack.isBroken(stack)) return false;
-        if (categories().contains(ToolCategory.SWORD)
-                && (state.is(Blocks.COBWEB) || state.is(BlockTags.SWORD_EFFICIENT))) return true;
         if (!effectiveOn(state)) return false;
         return ToolStack.getProperties(stack).getHarvestTier().canHarvest(state);
     }
