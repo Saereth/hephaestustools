@@ -5,6 +5,7 @@ import com.titammods.hephaestus_tools.materials.trait.MaterialTrait;
 import com.titammods.hephaestus_tools.registry.ModComponents;
 import com.titammods.hephaestus_tools.table.ToolXp;
 import com.titammods.hephaestus_tools.tools.helper.ToolTooltipBuilder;
+import com.titammods.hephaestus_tools.tools.helper.ToolDurability;
 import com.titammods.hephaestus_tools.tools.nbt.ToolPropertiesData;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import net.minecraft.ChatFormatting;
@@ -160,8 +161,8 @@ public abstract class ModifiableItem extends Item {
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state,
                              BlockPos pos, LivingEntity entity) {
-        if (!level.isClientSide() && state.getDestroySpeed(level, pos) > 0 && !ToolStack.isBroken(stack)) {
-            setDamage(stack, getDamage(stack) + 1);
+        if (level instanceof ServerLevel serverLevel && state.getDestroySpeed(level, pos) > 0) {
+            ToolDurability.hurt(stack, 1, serverLevel, entity);
         }
         return true;
     }
@@ -169,8 +170,8 @@ public abstract class ModifiableItem extends Item {
     @Override
     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
         super.hurtEnemy(stack, target, attacker);
-        if (ToolStack.isInitialized(stack) && !ToolStack.isBroken(stack)) {
-            setDamage(stack, getDamage(stack) + 1);
+        if (attacker.level() instanceof ServerLevel serverLevel) {
+            ToolDurability.hurt(stack, 1, serverLevel, attacker);
         }
     }
 
@@ -207,7 +208,9 @@ public abstract class ModifiableItem extends Item {
                 SoundSource.BLOCKS, 1.0f, 1.0f);
         if (!level.isClientSide()) {
             level.setBlock(pos, modified, 11);
-            if (player != null && !player.getAbilities().instabuild) setDamage(stack, getDamage(stack) + 1);
+            if (player != null && level instanceof ServerLevel serverLevel) {
+                ToolDurability.hurt(stack, 1, serverLevel, player);
+            }
         }
         return InteractionResult.SUCCESS;
     }
