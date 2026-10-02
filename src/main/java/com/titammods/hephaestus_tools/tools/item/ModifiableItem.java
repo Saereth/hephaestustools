@@ -1,6 +1,7 @@
 package com.titammods.hephaestus_tools.tools.item;
 
 import com.titammods.hephaestus_tools.materials.MaterialId;
+import com.titammods.hephaestus_tools.event.MasteryInteract;
 import com.titammods.hephaestus_tools.materials.trait.MaterialTrait;
 import com.titammods.hephaestus_tools.registry.ModComponents;
 import com.titammods.hephaestus_tools.table.ToolXp;
@@ -70,6 +71,8 @@ public abstract class ModifiableItem extends Item {
                 && (!ToolStack.isInitialized(stack) || ToolStack.isBroken(stack))) {
             return false;
         }
+        if (instance instanceof ItemStack stack && ability == ItemAbilities.HOE_TILL
+                && MasteryInteract.isCultivator(stack)) return true;
         for (ToolCategory c : categories()) {
             if (c.ability != null && c.ability == ability) return true;
         }
@@ -181,6 +184,11 @@ public abstract class ModifiableItem extends Item {
     }
 
     @Override
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
+        return MasteryInteract.useFirst(context);
+    }
+
+    @Override
     public InteractionResult useOn(UseOnContext ctx) {
         ItemStack stack = ctx.getItemInHand();
         if (!ToolStack.isInitialized(stack) || ToolStack.isBroken(stack)) return InteractionResult.PASS;
@@ -191,7 +199,12 @@ public abstract class ModifiableItem extends Item {
 
         BlockState modified = null;
         ItemAbility ability = null;
+        if (MasteryInteract.isCultivator(stack) && ctx.getClickedFace() != Direction.DOWN) {
+            modified = state.getToolModifiedState(ctx, ItemAbilities.HOE_TILL, false);
+            if (modified != null) ability = ItemAbilities.HOE_TILL;
+        }
         for (ToolCategory c : ToolCategory.values()) {
+            if (modified != null) break;
             if (!categories().contains(c) || !c.modifiesBlockOnUse()) continue;
             ItemAbility a = c.ability;
             if (a != ItemAbilities.AXE_STRIP
@@ -208,7 +221,7 @@ public abstract class ModifiableItem extends Item {
                 SoundSource.BLOCKS, 1.0f, 1.0f);
         if (!level.isClientSide()) {
             level.setBlock(pos, modified, 11);
-            if (player != null && level instanceof ServerLevel serverLevel) {
+            if (player != null && !MasteryInteract.isTilling() && level instanceof ServerLevel serverLevel) {
                 ToolDurability.hurt(stack, 1, serverLevel, player);
             }
         }

@@ -19,6 +19,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.CommonHooks;
+import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.event.EventHooks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,19 +68,29 @@ public final class MasteryAoe {
         }
     }
 
-    public static void harvestCrops(ServerLevel level, ServerPlayer player, ItemStack tool, List<BlockPos> positions, boolean replant, boolean partial) {
+    public static boolean harvestCrops(ServerLevel level, ServerPlayer player, ItemStack tool, List<BlockPos> positions, boolean replant, boolean partial) {
+        boolean changed = false;
         for (BlockPos p : positions) {
+            if (!player.getAbilities().mayBuild || !PlayerBlockBreaks.mayModify(player, tool, p, Direction.UP)) continue;
             BlockState st = level.getBlockState(p);
             if (!(st.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(st)) continue;
-            Block.dropResources(st, level, p, null, player, tool);
+            if (CommonHooks.fireBlockBreak(level, player.gameMode.getGameModeForPlayer(), player, p, st).isCanceled()) continue;
             if (replant || partial) {
                 int age = partial ? Math.max(1, crop.getMaxAge() / 2) : 0;
-                level.setBlock(p, crop.getStateForAge(age), 3);
+                BlockSnapshot snapshot = BlockSnapshot.create(level.dimension(), level, p);
+                if (!level.setBlock(p, crop.getStateForAge(age), 3)) continue;
+                if (EventHooks.onBlockPlace(player, snapshot, Direction.UP)) {
+                    snapshot.restore();
+                    continue;
+                }
             } else {
-                level.destroyBlock(p, false);
+                if (!level.removeBlock(p, false)) continue;
             }
+            if (!player.getAbilities().instabuild) Block.dropResources(st, level, p, null, player, tool);
+            changed = true;
             player.connection.send(new ClientboundBlockUpdatePacket(level, p));
         }
+        return changed;
     }
 
     public static boolean isCrop(BlockState s) { return s.getBlock() instanceof CropBlock; }

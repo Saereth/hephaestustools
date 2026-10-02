@@ -4,6 +4,7 @@ import com.titammods.hephaestus_tools.event.MasteryEvents;
 import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -39,10 +40,8 @@ public final class PlayerBlockBreaks {
 
     public static boolean breakExtra(ServerPlayer player, ItemStack tool, BlockPos pos) {
         var level = player.level();
-        if (player.getMainHandItem() != tool || !isUsable(tool)
-                || !level.isInWorldBounds(pos) || !level.hasChunkAt(pos)
-                || !level.getWorldBorder().isWithinBounds(pos)
-                || !player.mayUseItemAt(pos, BlockSideHitHandler.getSideHit(player), tool)) return false;
+        if (player.getMainHandItem() != tool
+                || !mayModify(player, tool, pos, BlockSideHitHandler.getSideHit(player))) return false;
         BlockState state = level.getBlockState(pos);
         if (state.isAir() || state.getDestroySpeed(level, pos) < 0
                 || !tool.isCorrectToolForDrops(state) || !state.canHarvestBlock(level, pos, player)) return false;
@@ -56,5 +55,12 @@ public final class PlayerBlockBreaks {
             if (wasBreaking) BREAKING.set(true);
             else BREAKING.remove();
         }
+    }
+
+    public static boolean mayModify(ServerPlayer player, ItemStack tool, BlockPos pos, Direction face) {
+        var level = player.level();
+        return isUsable(tool) && !player.isSpectator() && level.isInWorldBounds(pos)
+                && level.hasChunkAt(pos) && level.getWorldBorder().isWithinBounds(pos)
+                && level.mayInteract(player, pos) && player.mayUseItemAt(pos, face, tool);
     }
 }
