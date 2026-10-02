@@ -114,8 +114,5 @@ public class ArsenalTableBlock extends BaseEntityBlock {
         if (other.is(this) && other.getValue(PART) != part) {
             level.removeBlock(otherPos, false);
         }
-        if (part == TablePart.MAIN && level.getBlockEntity(pos) instanceof ArsenalTableBlockEntity a) {
-            a.dropContents(level, pos);
-        }
     }
 }

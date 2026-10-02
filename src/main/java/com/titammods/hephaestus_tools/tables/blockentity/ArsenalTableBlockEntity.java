@@ -64,6 +64,14 @@ public class ArsenalTableBlockEntity extends BlockEntity implements MenuProvider
         }
     }
 
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level != null && !level.isClientSide()) {
+            dropContents(level, pos);
+        }
+    }
+
     public void dropContents(Level level, BlockPos pos) {
         SimpleContainer c = new SimpleContainer(7);
         c.setItem(0, upgradeSlot.getStackInSlot(0));
