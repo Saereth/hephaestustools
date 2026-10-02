@@ -252,14 +252,14 @@ public abstract class ModifiableItem extends Item {
         }
 
         List<Component> lines = new ArrayList<>();
-        if (isShiftDown()) {
+        if (flag.hasShiftDown()) {
             lines.addAll(ToolTooltipBuilder.stats(stack, true));
             List<Component> mods = ToolTooltipBuilder.modifiers(stack, true);
             if (!mods.isEmpty()) {
                 lines.add(Component.empty());
                 lines.addAll(mods);
             }
-        } else if (isControlDown()) {
+        } else if (flag.hasControlDown()) {
             lines.addAll(ToolTooltipBuilder.components(stack, this));
         } else {
             lines.addAll(ToolTooltipBuilder.defaultInfo(stack));
@@ -295,20 +295,6 @@ public abstract class ModifiableItem extends Item {
             tooltip.accept(Component.translatable("trait.hephaestus_tools." + t.id())
                     .withStyle(ChatFormatting.DARK_AQUA));
         }
-    }
-
-    private static boolean isKeyDown(int left, int right) {
-        var window = net.minecraft.client.Minecraft.getInstance().getWindow();
-        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, left)
-                || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, right);
-    }
-
-    private static boolean isShiftDown() {
-        return isKeyDown(org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
-    }
-
-    private static boolean isControlDown() {
-        return isKeyDown(org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL);
     }
 
     public void onCraftedBy(ItemStack stack, Level level, Player player) {
