@@ -23,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeMap;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,11 +68,11 @@ public class HephaestusToolsJeiPlugin implements IModPlugin {
     @Override
     public void onRuntimeAvailable(IJeiRuntime jei) {
         MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
-        if (server == null) {
-            LOGGER.warn("[HephaestusTools/JEI] Sem servidor local, variantes de peca nao registradas");
+        RecipeMap rm = server != null ? server.getRecipeManager().recipeMap() : SyncedCastingRecipes.get();
+        if (rm == null) {
+            LOGGER.warn("[HephaestusTools/JEI] Receitas de fundicao nao recebidas do servidor, variantes de peca nao registradas");
             return;
         }
-        var rm = server.getRecipeManager();
         IRecipeManager jeiRm = jei.getRecipeManager();
 
         List<ItemStack> variants = new ArrayList<>();
@@ -79,7 +80,7 @@ public class HephaestusToolsJeiPlugin implements IModPlugin {
         List<ModRecipes.CastingTableRecipe> castWood = new ArrayList<>();
 
         for (RecipeHolder<ModRecipes.CastingTableRecipe> holder :
-                rm.recipeMap().byType(ModRecipes.CASTING_TABLE_TYPE.get())) {
+                rm.byType(ModRecipes.CASTING_TABLE_TYPE.get())) {
             ModRecipes.CastingTableRecipe r = holder.value();
             ItemStack result = r.result();
 
@@ -105,8 +106,8 @@ public class HephaestusToolsJeiPlugin implements IModPlugin {
                     r.resultId(), r.resultCount(), r.coolingTime()));
         }
 
-        int castingTotal = rm.recipeMap().byType(ModRecipes.CASTING_TABLE_TYPE.get()).size();
-        int meltingTotal = rm.recipeMap().byType(ModRecipes.MELTING_TYPE.get()).size();
+        int castingTotal = rm.byType(ModRecipes.CASTING_TABLE_TYPE.get()).size();
+        int meltingTotal = rm.byType(ModRecipes.MELTING_TYPE.get()).size();
         LOGGER.info("[HephaestusTools/JEI] casting={} melting={} variantes={} moldes={}",
                 castingTotal, meltingTotal, variants.size(), castGeneric.size());
 
