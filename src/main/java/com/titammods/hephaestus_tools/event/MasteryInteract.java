@@ -5,6 +5,7 @@ import com.titammods.hephaestus_tools.table.MasteryAoe;
 import com.titammods.hephaestus_tools.table.MasteryLevel;
 import com.titammods.hephaestus_tools.table.ToolMastery;
 import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
+import com.titammods.hephaestus_tools.tools.helper.ToolDurability;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -65,7 +66,7 @@ public final class MasteryInteract {
         }
         if (any) {
             l.playSound(null, c, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1f, 1f);
-            tool.hurtAndBreak(1, l, p, item -> {});
+            ToolDurability.hurt(tool, 1, l, p);
         }
     }
 
