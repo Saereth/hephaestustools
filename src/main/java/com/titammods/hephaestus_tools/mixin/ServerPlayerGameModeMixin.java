@@ -2,6 +2,7 @@ package com.titammods.hephaestus_tools.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.titammods.hephaestus_tools.event.ToolXpEvents;
 import com.titammods.hephaestus_tools.tools.aoe.HammerAoeBreakHandler;
 import com.titammods.hephaestus_tools.tools.aoe.PlayerBlockBreaks;
 import net.minecraft.core.BlockPos;
@@ -25,6 +26,7 @@ public abstract class ServerPlayerGameModeMixin {
         boolean removed = original.call(pos, state, canHarvest, tool);
         // This hook runs only after break cancellation and an actual successful removal.
         if (removed && player.getMainHandItem() == held) {
+            ToolXpEvents.afterBreak(player, state);
             PlayerBlockBreaks.afterBreak(player, pos, state, extras);
         }
         return removed;

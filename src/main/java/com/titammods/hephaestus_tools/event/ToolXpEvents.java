@@ -14,7 +14,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 import java.util.Set;
 
@@ -28,13 +27,10 @@ public final class ToolXpEvents {
         return ToolStack.isUsable(t) ? t : ItemStack.EMPTY;
     }
 
-    @SubscribeEvent
-    public static void onBreak(BreakBlockEvent e) {
-        if (!(e.getPlayer() instanceof ServerPlayer p)) return;
+    public static void afterBreak(ServerPlayer p, BlockState st) {
         ItemStack tool = tool(p);
         if (tool.isEmpty()) return;
         Set<ToolRole> roles = ToolUpgrades.rolesOf(tool.getItem());
-        BlockState st = e.getState();
         int xp = 0;
         if (roles.contains(ToolRole.MINING)) {
             if (st.is(Tags.Blocks.ORES)) xp = 5;
