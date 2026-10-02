@@ -1,6 +1,7 @@
 package com.titammods.hephaestus_tools.tools.nbt;
 
 import com.titammods.hephaestus_tools.materials.MaterialId;
+import com.titammods.hephaestus_tools.materials.MaterialManager;
 import com.titammods.hephaestus_tools.registry.ModComponents;
 import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.item.ToolCategory;
@@ -126,6 +127,14 @@ public final class ToolStack {
         }
     }
 
+    public static void refreshIfStale(ItemStack stack) {
+        ToolPropertiesData data = stack.get(ModComponents.TOOL_PROPERTIES.get());
+        if (data == null || !isInitialized(stack)) return;
+        MaterialManager.getInstance().fingerprint(getMaterials(stack)).ifPresent(hash -> {
+            if (hash != data.materialsHash()) recalculate(stack);
+        });
+    }
+
     public static boolean isBroken(ItemStack stack) {
         return getConstruction(stack).broken();
     }
@@ -134,7 +143,8 @@ public final class ToolStack {
         ToolConstructionData construction = getConstruction(stack);
         if (!construction.isInitialized()) return;
 
-        ToolPropertiesData properties = ToolBuildHandler.calculateProperties(stack, construction);
+        ToolPropertiesData properties = ToolBuildHandler.calculateProperties(stack, construction)
+                .withMaterialsHash(MaterialManager.getInstance().fingerprint(construction.materials()).orElse(0));
 
         stack.set(ModComponents.TOOL_PROPERTIES.get(), properties);
 

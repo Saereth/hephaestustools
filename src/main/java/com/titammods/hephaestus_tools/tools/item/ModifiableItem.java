@@ -270,6 +270,7 @@ public abstract class ModifiableItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, level, entity, slot);
+        ToolStack.refreshIfStale(stack);
         if (!(entity instanceof Player player) || !ToolStack.isInitialized(stack)) return;
         for (MaterialTrait t : MaterialTrait.collect(ToolStack.getMaterials(stack))) {
             if (ToolStack.isUsable(stack) || t == MaterialTrait.CULTIVATED) {
