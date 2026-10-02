@@ -188,7 +188,7 @@ public final class MasteryEvents {
             case "backstab" -> {
                 Vec3 look = target.getLookAngle().normalize();
                 Vec3 toA = p.position().subtract(target.position()).normalize();
-                if (look.dot(toA) > 0.4) bonus += lv >= 30 ? 0.75f : lv >= 20 ? 0.50f : 0.25f;
+                if (look.dot(toA) < -0.4) bonus += lv >= 30 ? 0.75f : lv >= 20 ? 0.50f : 0.25f;
             }
             case "assassin" -> {
                 if (MasteryStreak.nextCombatCount(p.getUUID(), target.getId(), now) == 1)
