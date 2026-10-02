@@ -5,7 +5,6 @@ import com.titammods.hephaestus_tools.table.MasteryAoe;
 import com.titammods.hephaestus_tools.table.MasteryLevel;
 import com.titammods.hephaestus_tools.table.MasteryStreak;
 import com.titammods.hephaestus_tools.table.ToolMastery;
-import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.aoe.BlockSideHitHandler;
 import com.titammods.hephaestus_tools.tools.aoe.PlayerBlockBreaks;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
@@ -48,7 +47,7 @@ public final class MasteryEvents {
     private static boolean sweeping = false;
 
     private static String mastery(ItemStack tool) {
-        if (!(tool.getItem() instanceof ModifiableItem) || !ToolStack.isInitialized(tool)) return "";
+        if (!ToolStack.isUsable(tool)) return "";
         return ToolMastery.selected(tool);
     }
 

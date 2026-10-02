@@ -4,6 +4,7 @@ import com.titammods.hephaestus_tools.materials.MaterialId;
 import com.titammods.hephaestus_tools.registry.ModComponents;
 import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.item.ToolCategory;
+import com.titammods.hephaestus_tools.tools.helper.ToolBuildHandler;
 import com.titammods.hephaestus_tools.tools.stat.HarvestTier;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
@@ -18,6 +19,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
+import net.minecraft.world.item.enchantment.Enchantable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.util.Lazy;
@@ -37,6 +39,11 @@ public final class ToolStack {
 
     public static boolean isInitialized(ItemStack stack) {
         return getConstruction(stack).isInitialized();
+    }
+
+    public static boolean isUsable(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() instanceof ModifiableItem
+                && isInitialized(stack) && !isBroken(stack);
     }
 
     public static List<MaterialId> getMaterials(ItemStack stack) {
@@ -111,6 +118,12 @@ public final class ToolStack {
         int clamped = Math.max(0, Math.min(damage, maxDurability));
         boolean broken = clamped >= maxDurability;
         stack.set(ModComponents.TOOL_CONSTRUCTION.get(), old.withDamage(clamped).withBroken(broken));
+        stack.set(DataComponents.DAMAGE, clamped);
+        if (broken != old.broken()) {
+            ToolPropertiesData properties = getProperties(stack);
+            updateAttributeModifiers(stack, properties);
+            updateToolComponent(stack, properties);
+        }
     }
 
     public static boolean isBroken(ItemStack stack) {
@@ -121,18 +134,20 @@ public final class ToolStack {
         ToolConstructionData construction = getConstruction(stack);
         if (!construction.isInitialized()) return;
 
-        ToolPropertiesData properties = com.titammods.hephaestus_tools.tools.helper.ToolBuildHandler
-                .calculateProperties(stack, construction);
+        ToolPropertiesData properties = ToolBuildHandler.calculateProperties(stack, construction);
 
         stack.set(ModComponents.TOOL_PROPERTIES.get(), properties);
 
-        stack.remove(DataComponents.ATTRIBUTE_MODIFIERS);
+        int damage = Math.max(0, Math.min(construction.damage(), properties.getDurability()));
+        stack.set(ModComponents.TOOL_CONSTRUCTION.get(), construction.withDamage(damage)
+                .withBroken(damage >= properties.getDurability()));
+        stack.set(DataComponents.DAMAGE, damage);
         updateAttributeModifiers(stack, properties);
 
         updateToolComponent(stack, properties);
         stack.set(DataComponents.MAX_DAMAGE, properties.getDurability());
         stack.set(DataComponents.ENCHANTABLE,
-                new net.minecraft.world.item.enchantment.Enchantable(
+                new Enchantable(
                         Math.max(1, properties.getEnchantability())));
     }
 
@@ -151,7 +166,12 @@ public final class ToolStack {
                         EquipmentSlotGroup.MAINHAND)
                 .build();
 
-        stack.set(DataComponents.ATTRIBUTE_MODIFIERS, modifiers);
+        List<ItemAttributeModifiers.Entry> entries = new ArrayList<>(
+                stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers());
+        entries.removeIf(entry -> entry.modifier().id().equals(Item.BASE_ATTACK_DAMAGE_ID)
+                || entry.modifier().id().equals(Item.BASE_ATTACK_SPEED_ID));
+        entries.addAll(modifiers.modifiers());
+        stack.set(DataComponents.ATTRIBUTE_MODIFIERS, new ItemAttributeModifiers(List.copyOf(entries)));
     }
 
     private static final Lazy<HolderGetter<Block>> BLOCK_LOOKUP =
@@ -164,7 +184,7 @@ public final class ToolStack {
         boolean sword = categories.contains(ToolCategory.SWORD);
 
         if (isBroken(stack)) {
-            stack.set(DataComponents.TOOL, new Tool(List.of(), 1.0f, 1, !sword));
+            stack.set(DataComponents.TOOL, new Tool(List.of(), 0.0f, 1, !sword));
             return;
         }
 

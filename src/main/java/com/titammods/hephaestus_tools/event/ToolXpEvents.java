@@ -4,7 +4,6 @@ import com.titammods.hephaestus_tools.HephaestusTools;
 import com.titammods.hephaestus_tools.table.ToolRole;
 import com.titammods.hephaestus_tools.table.ToolUpgrades;
 import com.titammods.hephaestus_tools.table.ToolXp;
-import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
@@ -26,7 +25,7 @@ public final class ToolXpEvents {
 
     private static ItemStack tool(ServerPlayer p) {
         ItemStack t = p.getMainHandItem();
-        return (t.getItem() instanceof ModifiableItem && ToolStack.isInitialized(t)) ? t : ItemStack.EMPTY;
+        return ToolStack.isUsable(t) ? t : ItemStack.EMPTY;
     }
 
     @SubscribeEvent

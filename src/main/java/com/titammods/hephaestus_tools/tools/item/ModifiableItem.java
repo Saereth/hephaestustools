@@ -12,7 +12,6 @@ import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -107,9 +106,6 @@ public abstract class ModifiableItem extends Item {
     @Override
     public void setDamage(ItemStack stack, int damage) {
         ToolStack.setDamage(stack, damage);
-        int maxDurability = ToolStack.getDurability(stack);
-        int clamped = Math.max(0, Math.min(damage, maxDurability));
-        stack.set(DataComponents.DAMAGE, clamped);
     }
 
     @Override
@@ -276,7 +272,9 @@ public abstract class ModifiableItem extends Item {
         super.inventoryTick(stack, level, entity, slot);
         if (!(entity instanceof Player player) || !ToolStack.isInitialized(stack)) return;
         for (MaterialTrait t : MaterialTrait.collect(ToolStack.getMaterials(stack))) {
-            t.onInventoryTick(stack, level, player);
+            if (ToolStack.isUsable(stack) || t == MaterialTrait.CULTIVATED) {
+                t.onInventoryTick(stack, level, player);
+            }
         }
     }
 

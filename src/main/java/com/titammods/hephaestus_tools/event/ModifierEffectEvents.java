@@ -1,7 +1,6 @@
 package com.titammods.hephaestus_tools.event;
 
 import com.titammods.hephaestus_tools.HephaestusTools;
-import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.modifier.ModifierEffects;
 import com.titammods.hephaestus_tools.tools.nbt.ToolConstructionData;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
@@ -27,7 +26,7 @@ public final class ModifierEffectEvents {
     private static boolean sweeping = false;
 
     private static int modLevel(ItemStack tool, Identifier id) {
-        if (!(tool.getItem() instanceof ModifiableItem) || !ToolStack.isInitialized(tool)) return 0;
+        if (!ToolStack.isUsable(tool)) return 0;
         for (ToolConstructionData.ModifierEntry e : ToolStack.getModifiers(tool)) if (e.id().equals(id)) return e.level();
         return 0;
     }

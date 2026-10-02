@@ -1,7 +1,6 @@
 package com.titammods.hephaestus_tools.tools.aoe;
 
 import com.titammods.hephaestus_tools.event.MasteryEvents;
-import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,8 +19,7 @@ public final class PlayerBlockBreaks {
     public static boolean isBreaking() { return BREAKING.get(); }
 
     public static boolean isUsable(ItemStack tool) {
-        return !tool.isEmpty() && tool.getItem() instanceof ModifiableItem
-                && ToolStack.isInitialized(tool) && !ToolStack.isBroken(tool);
+        return ToolStack.isUsable(tool);
     }
 
     public static void afterBreak(ServerPlayer player, BlockPos origin, BlockState state, List<BlockPos> extras) {
