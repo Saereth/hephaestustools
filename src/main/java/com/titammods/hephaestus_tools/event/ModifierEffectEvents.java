@@ -4,6 +4,7 @@ import com.titammods.hephaestus_tools.HephaestusTools;
 import com.titammods.hephaestus_tools.tools.modifier.ModifierEffects;
 import com.titammods.hephaestus_tools.tools.nbt.ToolConstructionData;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
+import com.titammods.hephaestus_tools.tools.helper.ToolCombat;
 import com.titammods.hephaestus_tools.tools.stat.ToolStats;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -15,15 +16,13 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.enchanting.GetEnchantmentLevelEvent;
 
 @EventBusSubscriber(modid = HephaestusTools.MOD_ID)
 public final class ModifierEffectEvents {
 
     private ModifierEffectEvents() {}
-
-    private static boolean sweeping = false;
 
     private static int modLevel(ItemStack tool, Identifier id) {
         if (!ToolStack.isUsable(tool)) return 0;
@@ -32,25 +31,25 @@ public final class ModifierEffectEvents {
     }
 
     @SubscribeEvent
-    public static void onHit(LivingIncomingDamageEvent e) {
+    public static void onHit(LivingDamageEvent.Post e) {
         if (!(e.getSource().getEntity() instanceof Player p)) return;
-        ItemStack tool = p.getMainHandItem();
+        if (e.getHealthDamage() <= 0) return;
+        ItemStack tool = ToolCombat.tool(e.getEntity(), e.getSource());
         LivingEntity target = e.getEntity();
 
         int flame = modLevel(tool, ModifierEffects.FLAME);
         if (flame > 0) target.igniteForSeconds(3 * flame);
 
         int sweep = modLevel(tool, ModifierEffects.SWEEPING);
-        if (sweep > 0 && !sweeping && p.level() instanceof ServerLevel serverLevel) {
-            sweeping = true;
-            try {
+        if (sweep > 0 && p.level() instanceof ServerLevel serverLevel) {
+            ToolCombat.secondary(() -> {
                 double r = 1.5 + sweep * 0.5;
                 float frac = 0.25f * sweep;
                 DamageSource src = p.damageSources().playerAttack(p);
                 for (LivingEntity m : serverLevel.getEntitiesOfClass(LivingEntity.class,
                         new AABB(target.blockPosition()).inflate(r)))
-                    if (m != target && m != p && m.isAlive()) m.hurtServer(serverLevel, src, e.getAmount() * frac);
-            } finally { sweeping = false; }
+                    if (m != target && m != p && m.isAlive()) m.hurtServer(serverLevel, src, e.getOriginalDamage() * frac);
+            });
         }
     }
 

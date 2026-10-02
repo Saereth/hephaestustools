@@ -5,6 +5,7 @@ import com.titammods.hephaestus_tools.table.ToolRole;
 import com.titammods.hephaestus_tools.table.ToolUpgrades;
 import com.titammods.hephaestus_tools.table.ToolXp;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
+import com.titammods.hephaestus_tools.tools.helper.ToolCombat;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
@@ -12,8 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 import java.util.Set;
@@ -46,18 +46,15 @@ public final class ToolXpEvents {
     }
 
     @SubscribeEvent
-    public static void onHit(LivingIncomingDamageEvent e) {
+    public static void onHit(LivingDamageEvent.Post e) {
         if (!(e.getSource().getEntity() instanceof ServerPlayer p)) return;
-        ItemStack tool = tool(p);
+        if (e.getHealthDamage() <= 0) return;
+        ItemStack tool = ToolCombat.tool(e.getEntity(), e.getSource());
         if (tool.isEmpty() || !ToolUpgrades.rolesOf(tool.getItem()).contains(ToolRole.COMBAT)) return;
-        ToolXp.addXp(tool, p, Math.max(1, (int) (e.getAmount() / 3f)));
+        ToolXp.addXp(tool, p, Math.max(1, (int) (e.getHealthDamage() / 3f)));
     }
 
-    @SubscribeEvent
-    public static void onKill(LivingDeathEvent e) {
-        if (!(e.getSource().getEntity() instanceof ServerPlayer p)) return;
-        ItemStack tool = tool(p);
-        if (tool.isEmpty() || !ToolUpgrades.rolesOf(tool.getItem()).contains(ToolRole.COMBAT)) return;
-        ToolXp.addXp(tool, p, 5);
+    public static void onMeleeKill(ItemStack tool, ServerPlayer player) {
+        if (ToolUpgrades.rolesOf(tool.getItem()).contains(ToolRole.COMBAT)) ToolXp.addXp(tool, player, 5);
     }
 }
