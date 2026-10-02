@@ -101,6 +101,7 @@ public interface IAoeTool {
                         if (!visited.add(n) || !world.isInWorldBounds(n) || !world.hasChunkAt(n)) continue;
                         if (world.getBlockState(n).is(target)) {
                             result.add(n);
+                            if (result.size() >= TREE_CAP) return result;
                             queue.add(n);
                         }
                     }
