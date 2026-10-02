@@ -8,10 +8,12 @@ import com.titammods.hephaestus_tools.registry.ModMenus;
 import com.titammods.hephaestus_tools.tables.screen.ArsenalTableScreen;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
@@ -39,6 +41,12 @@ public class ClientModEvents {
     public static void registerSpecialModelRenderers(RegisterSpecialModelRendererEvent event) {
         ToolItemRenderer.Unbaked unbaked = new ToolItemRenderer.Unbaked();
         event.register(ToolItemRenderer.RENDERER_ID, unbaked.type());
+    }
+
+    @SubscribeEvent
+    public static void registerReloadListeners(AddClientReloadListenersEvent event) {
+        ResourceManagerReloadListener listener = manager -> ToolItemRenderer.clearTextureCache();
+        event.addListener(Identifier.fromNamespaceAndPath(HephaestusTools.MOD_ID, "tool_overlay_cache"), listener);
     }
 
     @SubscribeEvent
