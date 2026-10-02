@@ -12,6 +12,18 @@ public final class MasteryStreak {
     private static final Map<UUID, long[]> COMBAT = new HashMap<>();
     private static final Map<UUID, long[]> KILLS = new HashMap<>();
 
+    public static void clear(UUID id) {
+        MINE.remove(id);
+        COMBAT.remove(id);
+        KILLS.remove(id);
+    }
+
+    public static void clearAll() {
+        MINE.clear();
+        COMBAT.clear();
+        KILLS.clear();
+    }
+
     public static int mine(UUID id, long now, long timeout) {
         long[] s = MINE.get(id);
         if (s == null || now > s[1]) s = new long[]{0, 0};

@@ -31,6 +31,7 @@ import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -255,6 +256,16 @@ public final class MasteryEvents {
                 }
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        MasteryStreak.clear(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        MasteryStreak.clearAll();
     }
 
     public static void onMeleeKill(ItemStack tool, ServerPlayer player) {
