@@ -20,8 +20,11 @@ import org.slf4j.LoggerFactory;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 
 @EventBusSubscriber(modid = HephaestusTools.MOD_ID)
 public final class MaterialManager {
@@ -36,6 +39,7 @@ public final class MaterialManager {
     private static final MaterialManager INSTANCE = new MaterialManager();
 
     private final Map<MaterialId, Material> materials = new LinkedHashMap<>();
+    private final Map<MaterialId, Integer> fingerprints = new HashMap<>();
 
     private MaterialManager() {}
 
@@ -65,9 +69,21 @@ public final class MaterialManager {
         return Map.copyOf(materials);
     }
 
+    public OptionalInt fingerprint(List<MaterialId> ids) {
+        int hash = 1;
+        for (MaterialId id : ids) {
+            Integer part = fingerprints.get(id);
+            if (part == null) return OptionalInt.empty();
+            hash = 31 * hash + part;
+        }
+        return OptionalInt.of(hash);
+    }
+
     private void replaceAll(Map<MaterialId, Material> source) {
         materials.clear();
         materials.putAll(source);
+        fingerprints.clear();
+        source.forEach((id, material) -> fingerprints.put(id, material.toString().hashCode()));
     }
 
     public static void receiveSync(Map<MaterialId, Material> synced) {

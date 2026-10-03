@@ -52,7 +52,7 @@ public final class ModifierStatContext {
     }
 
     public void setHarvestTier(HarvestTier tier) {
-        if (tier.ordinal() > this.harvestTier.ordinal()) {
+        if (tier.miningLevel() > this.harvestTier.miningLevel()) {
             this.harvestTier = tier;
         }
     }

@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/handheld",
-  "textures": {
-    "particle": "hephaestus_tools:item/tool/hand_axe/head"
-  }
-}

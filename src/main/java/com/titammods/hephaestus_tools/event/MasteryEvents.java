@@ -5,8 +5,10 @@ import com.titammods.hephaestus_tools.table.MasteryAoe;
 import com.titammods.hephaestus_tools.table.MasteryLevel;
 import com.titammods.hephaestus_tools.table.MasteryStreak;
 import com.titammods.hephaestus_tools.table.ToolMastery;
-import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
+import com.titammods.hephaestus_tools.tools.aoe.BlockSideHitHandler;
+import com.titammods.hephaestus_tools.tools.aoe.PlayerBlockBreaks;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
+import com.titammods.hephaestus_tools.tools.helper.ToolCombat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,16 +28,17 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Predicate;
 
 @EventBusSubscriber(modid = HephaestusTools.MOD_ID)
 public final class MasteryEvents {
@@ -43,10 +46,9 @@ public final class MasteryEvents {
     private MasteryEvents() {}
 
     private static final long STREAK_TICKS = 60, COMBAT_TICKS = 100;
-    private static boolean sweeping = false;
 
     private static String mastery(ItemStack tool) {
-        if (!(tool.getItem() instanceof ModifiableItem) || !ToolStack.isInitialized(tool)) return "";
+        if (!ToolStack.isUsable(tool)) return "";
         return ToolMastery.selected(tool);
     }
 
@@ -81,16 +83,12 @@ public final class MasteryEvents {
         if (mult != 1f) event.setNewSpeed(event.getNewSpeed() * mult);
     }
 
-    @SubscribeEvent
-    public static void onBlockBreak(BreakBlockEvent event) {
-        if (!(event.getPlayer() instanceof Player p) || p.level().isClientSide()) return;
+    public static void afterBlockBreak(ServerPlayer p, BlockPos pos, BlockState state) {
         ItemStack tool = p.getMainHandItem();
         String m = mastery(tool);
         if (m.isEmpty()) return;
         int lv = MasteryLevel.of(tool);
         Level level = p.level();
-        BlockPos pos = event.getPos();
-        BlockState state = event.getState();
         long now = level.getGameTime();
         boolean srv = p instanceof ServerPlayer && level instanceof ServerLevel;
 
@@ -129,19 +127,19 @@ public final class MasteryEvents {
             }
             case "groundworker" -> {
                 if (!srv) return;
-                var area = MasteryAoe.square(level, p, lv >= 30 ? 2 : 1, MasteryAoe::isEarth);
+                var area = MasteryAoe.square(level, pos, BlockSideHitHandler.getSideHit(p), lv >= 30 ? 2 : 1, MasteryAoe::isEarth);
                 MasteryAoe.breakBlocks((ServerLevel) level, (ServerPlayer) p, tool, area, false);
             }
             case "reaper", "harvest_sweep", "replanter", "green_thumb" -> {
                 if (!srv) return;
                 int r = m.equals("reaper") ? (lv >= 30 ? 4 : lv >= 20 ? 3 : 2) : (lv >= 30 ? 3 : lv >= 20 ? 2 : 1);
-                var area = MasteryAoe.square(level, p, r, MasteryAoe::isMatureCrop);
+                var area = MasteryAoe.square(level, pos, BlockSideHitHandler.getSideHit(p), r, MasteryAoe::isMatureCrop);
                 MasteryAoe.harvestCrops((ServerLevel) level, (ServerPlayer) p, tool, area,
                         m.equals("replanter"), m.equals("green_thumb"));
             }
             case "aftershock" -> {
                 if (!srv || lv < 10) return;
-                BlockPos back = MasteryAoe.behind(level, p);
+                BlockPos back = pos.relative(BlockSideHitHandler.getSideHit(p).getOpposite());
                 if (back != null) {
                     var list = new ArrayList<BlockPos>();
                     list.add(back);
@@ -153,7 +151,9 @@ public final class MasteryEvents {
     }
 
     private static int flood(Level level, Player p, BlockPos origin,
-                             java.util.function.Predicate<BlockState> match, int limit, int range) {
+                             Predicate<BlockState> match, int limit, int range) {
+        if (!(p instanceof ServerPlayer player)) return 0;
+        ItemStack tool = player.getMainHandItem();
         int broken = 0;
         Set<BlockPos> vis = new HashSet<>();
         Queue<BlockPos> q = new ArrayDeque<>();
@@ -164,10 +164,8 @@ public final class MasteryEvents {
             for (int dx = -range; dx <= range; dx++) for (int dy = -range; dy <= range; dy++) for (int dz = -range; dz <= range; dz++) {
                 if (dx == 0 && dy == 0 && dz == 0) continue;
                 BlockPos np = cur.offset(dx, dy, dz);
-                if (vis.contains(np) || np.equals(origin)) continue;
-                if (match.test(level.getBlockState(np))) {
-                    vis.add(np);
-                    level.destroyBlock(np, true, p);
+                if (!vis.add(np) || !level.isInWorldBounds(np) || !level.hasChunkAt(np)) continue;
+                if (match.test(level.getBlockState(np)) && PlayerBlockBreaks.breakExtra(player, tool, np)) {
                     broken++;
                     q.add(np);
                     if (broken >= limit) return broken;
@@ -180,7 +178,7 @@ public final class MasteryEvents {
     @SubscribeEvent
     public static void onIncomingDamage(LivingIncomingDamageEvent event) {
         if (!(event.getSource().getEntity() instanceof Player p)) return;
-        ItemStack tool = p.getMainHandItem();
+        ItemStack tool = ToolCombat.tool(event.getEntity(), event.getSource());
         String m = mastery(tool);
         if (m.isEmpty()) return;
         int lv = MasteryLevel.of(tool);
@@ -191,18 +189,18 @@ public final class MasteryEvents {
             case "backstab" -> {
                 Vec3 look = target.getLookAngle().normalize();
                 Vec3 toA = p.position().subtract(target.position()).normalize();
-                if (look.dot(toA) > 0.4) bonus += lv >= 30 ? 0.75f : lv >= 20 ? 0.50f : 0.25f;
+                if (look.dot(toA) < -0.4) bonus += lv >= 30 ? 0.75f : lv >= 20 ? 0.50f : 0.25f;
             }
             case "assassin" -> {
-                if (MasteryStreak.combat(p.getUUID(), target.getId(), now, COMBAT_TICKS) == 1)
+                if (MasteryStreak.nextCombatCount(p.getUUID(), target.getId(), now) == 1)
                     bonus += lv >= 30 ? 1.0f : lv >= 20 ? 0.7f : 0.5f;
             }
             case "flurry" -> {
-                int h = MasteryStreak.combat(p.getUUID(), target.getId(), now, COMBAT_TICKS);
+                int h = MasteryStreak.nextCombatCount(p.getUUID(), target.getId(), now);
                 bonus += Math.min(h, lv >= 30 ? 8 : lv >= 20 ? 5 : 3) * 0.06f;
             }
             case "duelist" -> {
-                int h = MasteryStreak.combat(p.getUUID(), target.getId(), now, COMBAT_TICKS);
+                int h = MasteryStreak.nextCombatCount(p.getUUID(), target.getId(), now);
                 bonus += Math.min(h, lv >= 30 ? 10 : lv >= 20 ? 6 : 4) * 0.05f;
             }
             case "executioner" -> {
@@ -214,39 +212,65 @@ public final class MasteryEvents {
             case "crushing_blow" -> {
                 if (p.getAttackStrengthScale(0.5f) > 0.95f) {
                     bonus += lv >= 30 ? 0.6f : lv >= 20 ? 0.4f : 0.25f;
-                    target.knockback(lv >= 30 ? 1.2f : 0.8f, p.getX() - target.getX(), p.getZ() - target.getZ());
                 }
             }
             case "bloodlust" -> bonus += Math.min(MasteryStreak.killCount(p.getUUID(), now), lv >= 30 ? 8 : lv >= 20 ? 5 : 3) * 0.08f;
             case "blade_dance" -> bonus += Math.min(MasteryStreak.killCount(p.getUUID(), now)
-                    + MasteryStreak.combat(p.getUUID(), target.getId(), now, COMBAT_TICKS), lv >= 30 ? 10 : 6) * 0.05f;
+                    + MasteryStreak.nextCombatCount(p.getUUID(), target.getId(), now), lv >= 30 ? 10 : 6) * 0.05f;
             case "war_axe" -> {
                 bonus += lv >= 30 ? 0.5f : lv >= 20 ? 0.35f : 0.2f;
-                target.knockback(lv >= 30 ? 0.8f : 0.5f, p.getX() - target.getX(), p.getZ() - target.getZ());
             }
             case "hatchet_master" -> bonus += lv >= 30 ? 0.4f : lv >= 20 ? 0.28f : 0.18f;
-            case "death_sweep" -> {
-                if (!sweeping && p.level() instanceof ServerLevel serverLevel) {
-                    sweeping = true;
-                    try {
-                        double r = lv >= 30 ? 3.5 : lv >= 20 ? 2.5 : 2.0;
-                        float frac = lv >= 30 ? 0.6f : lv >= 20 ? 0.45f : 0.3f;
-                        DamageSource src = p.damageSources().playerAttack(p);
-                        for (LivingEntity e : serverLevel.getEntitiesOfClass(LivingEntity.class,
-                                new AABB(target.blockPosition()).inflate(r)))
-                            if (e != target && e != p && e.isAlive()) e.hurtServer(serverLevel, src, amount * frac);
-                    } finally { sweeping = false; }
-                }
-            }
+
         }
         if (bonus != 1f) event.setAmount(amount * bonus);
     }
 
     @SubscribeEvent
-    public static void onKill(LivingDeathEvent event) {
-        if (!(event.getSource().getEntity() instanceof Player p)) return;
-        String m = mastery(p.getMainHandItem());
-        if (m.equals("bloodlust") || m.equals("blade_dance"))
-            MasteryStreak.kill(p.getUUID(), p.level().getGameTime(), COMBAT_TICKS);
+    public static void onDamageResolved(LivingDamageEvent.Post event) {
+        if (event.getHealthDamage() <= 0 || !(event.getSource().getEntity() instanceof Player p)) return;
+        ItemStack tool = ToolCombat.tool(event.getEntity(), event.getSource());
+        String mastery = mastery(tool);
+        int lv = MasteryLevel.of(tool);
+        LivingEntity target = event.getEntity();
+        switch (mastery) {
+            case "assassin", "flurry", "duelist", "blade_dance" ->
+                    MasteryStreak.combat(p.getUUID(), target.getId(), p.level().getGameTime(), COMBAT_TICKS);
+            case "crushing_blow" -> {
+                if (p.getAttackStrengthScale(0.5f) > 0.95f)
+                    target.knockback(lv >= 30 ? 1.2f : 0.8f, p.getX() - target.getX(), p.getZ() - target.getZ());
+            }
+            case "war_axe" -> target.knockback(lv >= 30 ? 0.8f : 0.5f, p.getX() - target.getX(), p.getZ() - target.getZ());
+            case "death_sweep" -> {
+                if (p.level() instanceof ServerLevel serverLevel) {
+                    ToolCombat.secondary(() -> {
+                        double radius = lv >= 30 ? 3.5 : lv >= 20 ? 2.5 : 2.0;
+                        float fraction = lv >= 30 ? 0.6f : lv >= 20 ? 0.45f : 0.3f;
+                        DamageSource source = p.damageSources().playerAttack(p);
+                        for (LivingEntity entity : serverLevel.getEntitiesOfClass(LivingEntity.class,
+                                new AABB(target.blockPosition()).inflate(radius))) {
+                            if (entity != target && entity != p && entity.isAlive())
+                                entity.hurtServer(serverLevel, source, event.getOriginalDamage() * fraction);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        MasteryStreak.clear(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        MasteryStreak.clearAll();
+    }
+
+    public static void onMeleeKill(ItemStack tool, ServerPlayer player) {
+        String mastery = mastery(tool);
+        if (mastery.equals("bloodlust") || mastery.equals("blade_dance"))
+            MasteryStreak.kill(player.getUUID(), player.level().getGameTime(), COMBAT_TICKS);
     }
 }

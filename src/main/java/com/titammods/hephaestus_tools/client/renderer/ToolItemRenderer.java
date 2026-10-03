@@ -109,6 +109,10 @@ public class ToolItemRenderer implements SpecialModelRenderer<List<Identifier>> 
                 path -> Minecraft.getInstance().getResourceManager().getResource(path).isPresent());
     }
 
+    public static void clearTextureCache() {
+        TEXTURE_EXISTS.clear();
+    }
+
     private static List<Identifier> modifierTextures(ItemStack stack) {
         List<Identifier> out = new ArrayList<>();
         if (!ToolStack.isInitialized(stack)) return out;

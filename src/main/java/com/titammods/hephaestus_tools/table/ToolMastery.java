@@ -11,17 +11,19 @@ import net.minecraft.world.item.component.CustomData;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class ToolMastery {
 
     private ToolMastery() {}
 
     private static final Map<String, List<String>> PATHS = Map.ofEntries(
-            Map.entry("pickaxe", List.of("prospector", "deep_miner", "momentum")),
-            Map.entry("sledge_hammer", List.of("demolition", "aftershock", "unstoppable")),
+            Map.entry("pickaxe", List.of("deep_miner", "momentum")),
+            Map.entry("sledge_hammer", List.of("demolition", "aftershock")),
             Map.entry("vein_hammer", List.of("vein_seeker", "chain_reaction", "motherlode")),
             Map.entry("mattock", List.of("groundworker", "cultivator", "homesteader")),
-            Map.entry("excavator", List.of("earthmover", "tunnel_shaper", "clean_dig")),
+            Map.entry("excavator", List.of("earthmover")),
             Map.entry("hand_axe", List.of("lumber_rhythm", "precision_felling", "hatchet_master")),
             Map.entry("broad_axe", List.of("timberfall", "falling_giant", "war_axe")),
             Map.entry("kama", List.of("harvest_sweep", "replanter", "green_thumb")),
@@ -31,6 +33,9 @@ public final class ToolMastery {
             Map.entry("cleaver", List.of("butcher", "crushing_blow", "bloodlust"))
     );
 
+    private static final Set<String> OFFERED =
+            PATHS.values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableSet());
+
     private static final String CHOICE_KEY = "hephaestus_tools_mastery";
 
     public static String toolId(Item tool) { return BuiltInRegistries.ITEM.getKey(tool).getPath(); }
@@ -38,8 +43,9 @@ public final class ToolMastery {
     public static List<String> forTool(Item tool) { return PATHS.getOrDefault(toolId(tool), List.of()); }
 
     public static String selected(ItemStack tool) {
-        return tool.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
+        String choice = tool.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
                 .copyTag().getStringOr(CHOICE_KEY, "");
+        return OFFERED.contains(choice) ? choice : "";
     }
 
     public static boolean choose(ItemStack tool, int index) {

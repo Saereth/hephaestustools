@@ -1,0 +1,13 @@
+/tools/
+/.gradle/
+/build/
+/run/
+/run-data/
+/.idea/
+/.vscode/
+/.settings/
+/.classpath
+/.project
+/bin/
+/out/
+/src/generated/**/.cache/

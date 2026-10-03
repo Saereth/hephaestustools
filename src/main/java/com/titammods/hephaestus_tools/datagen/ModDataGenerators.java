@@ -17,6 +17,7 @@ public class ModDataGenerators {
     }
 
     private static void onServerData(GatherDataEvent.Server event) {
+        event.createProvider(ModBlockDataProvider::new);
         event.createProvider(ModRecipeProvider::new);
         event.createProvider(PartCastingMeltingProvider::new);
     }
