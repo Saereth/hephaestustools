@@ -29,7 +29,6 @@ public final class MasteryInteract {
         return PlayerBlockBreaks.isUsable(tool) && ToolMastery.selected(tool).equals("cultivator");
     }
 
-    // Called by the item's first-use hook, after the origin interaction event has resolved.
     public static InteractionResult useFirst(UseOnContext context) {
         if (!(context.getPlayer() instanceof ServerPlayer player)
                 || !PlayerBlockBreaks.isUsable(context.getItemInHand())
@@ -44,7 +43,7 @@ public final class MasteryInteract {
             case "reaper", "harvest_sweep", "replanter", "green_thumb" -> {
                 int r = mastery.equals("reaper") ? (level >= 30 ? 4 : level >= 20 ? 3 : 2)
                         : (level >= 30 ? 3 : level >= 20 ? 2 : 1);
-                var area = MasteryAoe.square(player.level(), context.getClickedPos(), context.getClickedFace(), r, MasteryAoe::isMatureCrop);
+                var area = MasteryAoe.square(player.level(), context.getClickedPos(), Direction.UP, r, MasteryAoe::isMatureCrop, true);
                 area.removeIf(pos -> !permitted(player, context, pos));
                 yield MasteryAoe.harvestCrops(player.level(), player, tool, area,
                         mastery.equals("replanter"), mastery.equals("green_thumb"));
@@ -95,7 +94,6 @@ public final class MasteryInteract {
                     || !player.level().getBlockState(farm).is(Blocks.FARMLAND) || !player.level().isEmptyBlock(farm.above())) continue;
             ItemStack seed = findSeed(player);
             if (seed.isEmpty()) break;
-            // Seed use fires the normal placement event and restores consumption on cancellation.
             UseOnContext context = new UseOnContext(player.level(), player, origin.getHand(), seed, hit(farm, Direction.UP));
             if (seed.useOn(context).consumesAction() && !player.level().isEmptyBlock(farm.above())) changed = true;
         }

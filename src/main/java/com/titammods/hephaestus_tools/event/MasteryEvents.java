@@ -10,6 +10,7 @@ import com.titammods.hephaestus_tools.tools.aoe.PlayerBlockBreaks;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import com.titammods.hephaestus_tools.tools.helper.ToolCombat;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
@@ -146,7 +147,7 @@ public final class MasteryEvents {
             case "reaper", "harvest_sweep", "replanter", "green_thumb" -> {
                 if (!srv) return;
                 int r = m.equals("reaper") ? (lv >= 30 ? 4 : lv >= 20 ? 3 : 2) : (lv >= 30 ? 3 : lv >= 20 ? 2 : 1);
-                var area = MasteryAoe.square(level, pos, BlockSideHitHandler.getSideHit(p), r, MasteryAoe::isMatureCrop);
+                var area = MasteryAoe.square(level, pos, Direction.UP, r, MasteryAoe::isMatureCrop);
                 MasteryAoe.harvestCrops((ServerLevel) level, (ServerPlayer) p, tool, area,
                         m.equals("replanter"), m.equals("green_thumb"));
             }

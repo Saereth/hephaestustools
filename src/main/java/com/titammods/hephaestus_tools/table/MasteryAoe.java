@@ -1,5 +1,6 @@
 package com.titammods.hephaestus_tools.table;
 
+import com.titammods.hephaestus_tools.event.ToolXpEvents;
 import com.titammods.hephaestus_tools.tools.aoe.PlayerBlockBreaks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,6 +40,11 @@ public final class MasteryAoe {
     }
 
     public static List<BlockPos> square(Level level, BlockPos c, Direction face, int r, Predicate<BlockState> match) {
+        return square(level, c, face, r, match, false);
+    }
+
+    public static List<BlockPos> square(Level level, BlockPos c, Direction face, int r, Predicate<BlockState> match,
+                                        boolean includeCenter) {
         List<BlockPos> out = new ArrayList<>();
         Direction d1, d2;
         switch (face.getAxis()) {
@@ -47,7 +53,7 @@ public final class MasteryAoe {
             default -> { d1 = Direction.UP;   d2 = Direction.EAST; }
         }
         for (int i = -r; i <= r; i++) for (int j = -r; j <= r; j++) {
-            if (i == 0 && j == 0) continue;
+            if (!includeCenter && i == 0 && j == 0) continue;
             BlockPos p = c.relative(d1, i).relative(d2, j);
             if (!level.isInWorldBounds(p) || !level.hasChunkAt(p)) continue;
             BlockState s = level.getBlockState(p);
@@ -87,6 +93,7 @@ public final class MasteryAoe {
                 if (!level.removeBlock(p, false)) continue;
             }
             if (!player.getAbilities().instabuild) Block.dropResources(st, level, p, null, player, tool);
+            ToolXpEvents.afterBreak(player, tool, st);
             changed = true;
             player.connection.send(new ClientboundBlockUpdatePacket(level, p));
         }

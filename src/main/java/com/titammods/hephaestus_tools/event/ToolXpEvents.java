@@ -28,8 +28,11 @@ public final class ToolXpEvents {
     }
 
     public static void afterBreak(ServerPlayer p, BlockState st) {
-        ItemStack tool = tool(p);
-        if (tool.isEmpty()) return;
+        afterBreak(p, tool(p), st);
+    }
+
+    public static void afterBreak(ServerPlayer p, ItemStack tool, BlockState st) {
+        if (!ToolStack.isUsable(tool)) return;
         Set<ToolRole> roles = ToolUpgrades.rolesOf(tool.getItem());
         int xp = 0;
         if (roles.contains(ToolRole.MINING)) {
