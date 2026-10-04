@@ -166,7 +166,7 @@
   "gui.hephaestus_tools.build.max_level": "Nível máximo",
   "gui.hephaestus_tools.build.scroll_list": "Role para ver mais modificadores",
   "gui.hephaestus_tools.build.mastery_levels": "Nv 10 / 20 / 30",
-  "gui.hephaestus_tools.build.mastery_preview": "XP, níveis de mastery e efeitos no jogo ainda não estão disponíveis.",
+  "gui.hephaestus_tools.build.mastery_requires_level": "Requer nível %s da ferramenta para ser aplicada.",
   "gui.hephaestus_tools.build.expand": "Expandir este painel",
   "gui.hephaestus_tools.build.collapse": "Recolher este painel",
   "gui.hephaestus_tools.upgrade.reinforced.desc": "+250 de durabilidade por nível.",

@@ -6,6 +6,7 @@ import com.titammods.hephaestus_tools.materials.MaterialManager;
 import com.titammods.hephaestus_tools.materials.trait.MaterialTrait;
 import com.titammods.hephaestus_tools.registry.ModItems;
 import com.titammods.hephaestus_tools.table.ArsenalTableLayout;
+import com.titammods.hephaestus_tools.table.MasteryLevel;
 import com.titammods.hephaestus_tools.table.ToolAssembly;
 import com.titammods.hephaestus_tools.table.ToolMastery;
 import com.titammods.hephaestus_tools.table.ToolUpgrade;
@@ -644,7 +645,9 @@ public class ArsenalTableScreen extends AbstractContainerScreen<ArsenalTableMenu
             String chosen = ToolMastery.selected(menu.tool());
             lines.addAll(font.split(tr(chosen.isEmpty() ? "mastery_permanent" : "mastery_locked")
                     .copy().withStyle(ChatFormatting.GOLD), 180));
-            lines.addAll(font.split(tr("mastery_preview"), 180));
+            var requirement = Component.translatable("gui.hephaestus_tools.build.mastery_requires_level", MasteryLevel.T1);
+            if (ToolXp.getLevel(menu.tool()) < MasteryLevel.T1) requirement.withStyle(ChatFormatting.RED);
+            lines.addAll(font.split(requirement, 180));
         }
         g.setTooltipForNextFrame(font, lines, mx, my);
     }

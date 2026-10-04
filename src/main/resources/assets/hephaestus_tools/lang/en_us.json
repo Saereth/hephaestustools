@@ -199,7 +199,7 @@
   "gui.hephaestus_tools.build.max_level": "Maximum level",
   "gui.hephaestus_tools.build.scroll_list": "Scroll to see more modifiers",
   "gui.hephaestus_tools.build.mastery_levels": "Lv 10 / 20 / 30",
-  "gui.hephaestus_tools.build.mastery_preview": "XP, mastery levels and gameplay effects are not available yet.",
+  "gui.hephaestus_tools.build.mastery_requires_level": "Requires tool level %s to be applied.",
   "gui.hephaestus_tools.build.expand": "Expand this panel",
   "gui.hephaestus_tools.build.collapse": "Collapse this panel",
   "gui.hephaestus_tools.upgrade.reinforced.desc": "+250 durability per level.",
