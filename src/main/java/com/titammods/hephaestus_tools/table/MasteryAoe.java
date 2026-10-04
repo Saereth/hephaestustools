@@ -74,6 +74,12 @@ public final class MasteryAoe {
         }
     }
 
+    public static void breakBlocks(ServerPlayer player, ItemStack tool, List<BlockPos> positions, Predicate<BlockState> alsoBreakable) {
+        for (BlockPos p : positions) {
+            PlayerBlockBreaks.breakExtra(player, tool, p, alsoBreakable);
+        }
+    }
+
     public static boolean harvestCrops(ServerLevel level, ServerPlayer player, ItemStack tool, List<BlockPos> positions, boolean replant, boolean partial) {
         boolean changed = false;
         for (BlockPos p : positions) {
@@ -108,6 +114,8 @@ public final class MasteryAoe {
         return s.is(BlockTags.DIRT) || s.is(BlockTags.SAND) || s.is(BlockTags.REPLACEABLE_BY_TREES)
                 || s.is(Blocks.GRAVEL) || s.is(Blocks.CLAY);
     }
+
+    public static boolean isGroundwork(BlockState s) { return isEarth(s) && s.getFluidState().isEmpty(); }
 
     public static boolean notOre(BlockState s) { return !s.is(Tags.Blocks.ORES); }
 

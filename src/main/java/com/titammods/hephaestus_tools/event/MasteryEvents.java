@@ -141,8 +141,8 @@ public final class MasteryEvents {
             }
             case "groundworker" -> {
                 if (!srv) return;
-                var area = MasteryAoe.square(level, pos, BlockSideHitHandler.getSideHit(p), lv >= 30 ? 2 : 1, MasteryAoe::isEarth);
-                MasteryAoe.breakBlocks((ServerLevel) level, (ServerPlayer) p, tool, area, false);
+                var area = MasteryAoe.square(level, pos, BlockSideHitHandler.getSideHit(p), lv >= 30 ? 2 : 1, MasteryAoe::isGroundwork);
+                MasteryAoe.breakBlocks(p, tool, area, MasteryAoe::isGroundwork);
             }
             case "reaper", "harvest_sweep", "replanter", "green_thumb" -> {
                 if (!srv) return;

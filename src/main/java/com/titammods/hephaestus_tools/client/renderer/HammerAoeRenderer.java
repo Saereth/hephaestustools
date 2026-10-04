@@ -113,7 +113,7 @@ public final class HammerAoeRenderer {
         if (mastery.isEmpty() || lv < MasteryLevel.T1) return List.of();
         BlockPos pos = hit.getBlockPos();
         return switch (mastery) {
-            case "groundworker" -> MasteryAoe.square(level, pos, hit.getDirection(), lv >= 30 ? 2 : 1, MasteryAoe::isEarth);
+            case "groundworker" -> MasteryAoe.square(level, pos, hit.getDirection(), lv >= 30 ? 2 : 1, MasteryAoe::isGroundwork);
             case "reaper" -> MasteryAoe.square(level, pos, Direction.UP,
                     lv >= 30 ? 4 : lv >= 20 ? 3 : 2, MasteryAoe::isMatureCrop);
             case "harvest_sweep", "replanter", "green_thumb" -> MasteryAoe.square(level, pos, Direction.UP,

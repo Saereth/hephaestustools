@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public final class PlayerBlockBreaks {
     private static final ThreadLocal<Boolean> BREAKING = ThreadLocal.withInitial(() -> false);
@@ -37,12 +38,17 @@ public final class PlayerBlockBreaks {
     }
 
     public static boolean breakExtra(ServerPlayer player, ItemStack tool, BlockPos pos) {
+        return breakExtra(player, tool, pos, state -> false);
+    }
+
+    public static boolean breakExtra(ServerPlayer player, ItemStack tool, BlockPos pos, Predicate<BlockState> alsoBreakable) {
         var level = player.level();
         if (player.getMainHandItem() != tool
                 || !mayModify(player, tool, pos, BlockSideHitHandler.getSideHit(player))) return false;
         BlockState state = level.getBlockState(pos);
         if (state.isAir() || state.getDestroySpeed(level, pos) < 0
-                || !tool.isCorrectToolForDrops(state) || !state.canHarvestBlock(level, pos, player)) return false;
+                || !(tool.isCorrectToolForDrops(state) || alsoBreakable.test(state))
+                || !state.canHarvestBlock(level, pos, player)) return false;
         boolean wasBreaking = isBreaking();
         BREAKING.set(true);
         try {
