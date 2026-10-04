@@ -20,10 +20,10 @@ public final class ToolMastery {
 
     private static final Map<String, List<String>> PATHS = Map.ofEntries(
             Map.entry("pickaxe", List.of("deep_miner", "momentum")),
-            Map.entry("sledge_hammer", List.of("demolition", "aftershock")),
+            Map.entry("sledge_hammer", List.of("demolition", "aftershock", "unstoppable")),
             Map.entry("vein_hammer", List.of("vein_seeker", "chain_reaction", "motherlode")),
             Map.entry("mattock", List.of("groundworker", "cultivator", "homesteader")),
-            Map.entry("excavator", List.of("earthmover")),
+            Map.entry("excavator", List.of("earthmover", "clean_dig")),
             Map.entry("hand_axe", List.of("lumber_rhythm", "precision_felling", "hatchet_master")),
             Map.entry("broad_axe", List.of("timberfall", "falling_giant", "war_axe")),
             Map.entry("kama", List.of("harvest_sweep", "replanter", "green_thumb")),

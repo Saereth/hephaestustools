@@ -46,6 +46,7 @@ public final class MasteryEvents {
     private MasteryEvents() {}
 
     private static final long STREAK_TICKS = 60, COMBAT_TICKS = 100;
+    private static final float HARD_BLOCK = 3.0f;
 
     private static String mastery(ItemStack tool) {
         if (!ToolStack.isUsable(tool)) return "";
@@ -79,8 +80,20 @@ public final class MasteryEvents {
                 if (lv >= 10 && p.getY() < 32 && isDeepBlock(event.getState()))
                     mult += (lv >= 30 ? 0.30f : lv >= 20 ? 0.20f : 0.10f);
             }
+            case "unstoppable" -> {
+                float hardness = event.getPosition()
+                        .map(pos -> event.getState().getDestroySpeed(p.level(), pos)).orElse(0f);
+                if (lv >= 10 && hardness >= HARD_BLOCK)
+                    mult += (lv >= 30 ? 0.30f : lv >= 20 ? 0.20f : 0.10f);
+            }
         }
         if (mult != 1f) event.setNewSpeed(event.getNewSpeed() * mult);
+    }
+
+    public static boolean sparesAoeWear(ItemStack tool, LivingEntity owner) {
+        if (!PlayerBlockBreaks.isBreaking() || !mastery(tool).equals("unstoppable")) return false;
+        int lv = MasteryLevel.of(tool);
+        return owner.getRandom().nextFloat() < (lv >= 30 ? 0.50f : lv >= 20 ? 0.35f : 0.20f);
     }
 
     public static void afterBlockBreak(ServerPlayer p, BlockPos pos, BlockState state) {

@@ -103,4 +103,9 @@ public final class MasteryAoe {
     }
 
     public static boolean notOre(BlockState s) { return !s.is(Tags.Blocks.ORES); }
+
+    public static boolean isCleanDig(BlockState center, BlockState s) {
+        if (s.hasBlockEntity() || !notOre(s)) return false;
+        return s.getBlock() == center.getBlock() || (isEarth(center) && isEarth(s));
+    }
 }

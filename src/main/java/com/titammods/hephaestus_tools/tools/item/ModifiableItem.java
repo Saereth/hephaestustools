@@ -1,6 +1,7 @@
 package com.titammods.hephaestus_tools.tools.item;
 
 import com.titammods.hephaestus_tools.materials.MaterialId;
+import com.titammods.hephaestus_tools.event.MasteryEvents;
 import com.titammods.hephaestus_tools.event.MasteryInteract;
 import com.titammods.hephaestus_tools.materials.trait.MaterialTrait;
 import com.titammods.hephaestus_tools.registry.ModComponents;
@@ -160,7 +161,8 @@ public abstract class ModifiableItem extends Item {
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state,
                              BlockPos pos, LivingEntity entity) {
-        if (level instanceof ServerLevel serverLevel && state.getDestroySpeed(level, pos) > 0) {
+        if (level instanceof ServerLevel serverLevel && state.getDestroySpeed(level, pos) > 0
+                && !MasteryEvents.sparesAoeWear(stack, entity)) {
             ToolDurability.hurt(stack, 1, serverLevel, entity);
         }
         return true;
