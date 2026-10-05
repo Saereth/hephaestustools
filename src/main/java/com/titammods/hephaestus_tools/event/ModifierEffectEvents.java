@@ -1,23 +1,28 @@
 package com.titammods.hephaestus_tools.event;
 
 import com.titammods.hephaestus_tools.HephaestusTools;
+import com.titammods.hephaestus_tools.tools.helper.ToolEnchantments;
+import com.titammods.hephaestus_tools.tools.item.ModifiableItem;
 import com.titammods.hephaestus_tools.tools.modifier.ModifierEffects;
 import com.titammods.hephaestus_tools.tools.nbt.ToolConstructionData;
 import com.titammods.hephaestus_tools.tools.nbt.ToolStack;
 import com.titammods.hephaestus_tools.tools.helper.ToolCombat;
 import com.titammods.hephaestus_tools.tools.stat.ToolStats;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.enchanting.GetEnchantmentLevelEvent;
+
+import java.util.function.IntSupplier;
 
 @EventBusSubscriber(modid = HephaestusTools.MOD_ID)
 public final class ModifierEffectEvents {
@@ -55,16 +60,26 @@ public final class ModifierEffectEvents {
 
     @SubscribeEvent
     public static void onEnchantments(GetEnchantmentLevelEvent event) {
-        if (!(event.getStack() instanceof ItemStack tool)) return;
-        if (event.isTargetting(Enchantments.SILK_TOUCH) && modLevel(tool, ModifierEffects.SILK_TOUCH) > 0) {
-            event.getHolder(Enchantments.SILK_TOUCH).ifPresent(enchantment ->
-                    event.getEnchantments().set(enchantment, Math.max(1, event.getEnchantments().getLevel(enchantment))));
+        if (!(event.getStack() instanceof ItemStack tool) || !(tool.getItem() instanceof ModifiableItem)) return;
+        for (ResourceKey<Enchantment> banned : ToolEnchantments.banned()) {
+            grant(event, banned, () -> 0);
         }
-        if (event.isTargetting(Enchantments.LOOTING) && ToolStack.isUsable(tool)) {
-            int looting = Math.max(0, (int) ToolStack.getProperties(tool).getStat(ToolStats.LOOTING, 0));
-            // Use the stronger source instead of counting the same benefit twice.
-            event.getHolder(Enchantments.LOOTING).ifPresent(enchantment ->
-                    event.getEnchantments().set(enchantment, Math.max(looting, event.getEnchantments().getLevel(enchantment))));
-        }
+        grant(event, ToolEnchantments.UNBREAKING, () -> modLevel(tool, ModifierEffects.REINFORCED));
+        grant(event, ToolEnchantments.EFFICIENCY, () -> modLevel(tool, ModifierEffects.HASTE));
+        grant(event, ToolEnchantments.SHARPNESS, () -> modLevel(tool, ModifierEffects.SHARPNESS));
+        grant(event, ToolEnchantments.SILK_TOUCH, () -> modLevel(tool, ModifierEffects.SILK_TOUCH));
+        grant(event, ToolEnchantments.FORTUNE, () -> stat(tool, ToolStats.FORTUNE));
+        grant(event, ToolEnchantments.LOOTING, () -> stat(tool, ToolStats.LOOTING));
+    }
+
+    private static int stat(ItemStack tool, String name) {
+        if (!ToolStack.isUsable(tool)) return 0;
+        return Math.max(0, (int) ToolStack.getProperties(tool).getStat(name, 0));
+    }
+
+    private static void grant(GetEnchantmentLevelEvent event, ResourceKey<Enchantment> key, IntSupplier level) {
+        if (!event.isTargetting(key)) return;
+        int value = level.getAsInt();
+        event.getHolder(key).ifPresent(holder -> event.getEnchantments().set(holder, value));
     }
 }

@@ -11,18 +11,24 @@ import java.util.List;
 public final class ToolEnchantments {
     private ToolEnchantments() {}
 
+    public static final ResourceKey<Enchantment> SILK_TOUCH = key("silk_touch");
+    public static final ResourceKey<Enchantment> LOOTING = key("looting");
+    public static final ResourceKey<Enchantment> FORTUNE = key("fortune");
+    public static final ResourceKey<Enchantment> SHARPNESS = key("sharpness");
+    public static final ResourceKey<Enchantment> SWEEPING_EDGE = key("sweeping_edge");
+    public static final ResourceKey<Enchantment> EFFICIENCY = key("efficiency");
+    public static final ResourceKey<Enchantment> UNBREAKING = key("unbreaking");
+    public static final ResourceKey<Enchantment> MENDING = key("mending");
+
     private static final List<ResourceKey<Enchantment>> BANNED = List.of(
-            key("silk_touch"),
-            key("looting"),
-            key("fortune"),
-            key("sharpness"),
-            key("sweeping_edge"),
-            key("efficiency"),
-            key("unbreaking"),
-            key("mending"));
+            SILK_TOUCH, LOOTING, FORTUNE, SHARPNESS, SWEEPING_EDGE, EFFICIENCY, UNBREAKING, MENDING);
 
     private static ResourceKey<Enchantment> key(String path) {
         return ResourceKey.create(Registries.ENCHANTMENT, Identifier.withDefaultNamespace(path));
+    }
+
+    public static List<ResourceKey<Enchantment>> banned() {
+        return BANNED;
     }
 
     public static boolean isBanned(Holder<Enchantment> enchantment) {
