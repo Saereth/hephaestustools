@@ -1,5 +1,8 @@
 package com.titammods.hephaestus_tools.tools.stat;
 
+import com.titammods.hephaestus_tools.HephaestusTools;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
@@ -12,7 +15,9 @@ public enum HarvestTier {
     IRON("iron", 2, BlockTags.INCORRECT_FOR_IRON_TOOL),
     DIAMOND("diamond", 3, BlockTags.INCORRECT_FOR_DIAMOND_TOOL),
     GOLD("gold", 0, BlockTags.INCORRECT_FOR_GOLD_TOOL),
-    NETHERITE("netherite", 4, BlockTags.INCORRECT_FOR_NETHERITE_TOOL);
+    NETHERITE("netherite", 4, BlockTags.INCORRECT_FOR_NETHERITE_TOOL),
+    ADAMANTITE("adamantite", 5, modTag("incorrect_for_adamantite_tool")),
+    AURICHALCUM("aurichalcum", 6, modTag("incorrect_for_aurichalcum_tool"));
 
     private final String id;
     private final int miningLevel;
@@ -38,6 +43,10 @@ public enum HarvestTier {
 
     public boolean canHarvest(BlockState state) {
         return !state.is(incorrectForTag);
+    }
+
+    private static TagKey<Block> modTag(String path) {
+        return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(HephaestusTools.MOD_ID, path));
     }
 
     public static HarvestTier byOrdinal(int ordinal) {

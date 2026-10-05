@@ -24,7 +24,15 @@ public class PartCastingMeltingProvider implements DataProvider {
 
     private record Part(String name, int cost) {}
 
-    private record Metal(String name, int temp, boolean vanilla) {}
+    private record Metal(String name, int temp, List<String> mods) {
+        boolean vanilla() {
+            return mods.isEmpty();
+        }
+    }
+
+    private static final List<String> NO_MODS = List.of();
+    private static final List<String> ORE_MODS = List.of("alltheores", "ftbmaterials");
+    private static final List<String> ARMORY_MODS = List.of("ftbarmory");
 
     private static final List<Part> PARTS = List.of(
             new Part("pick_head", 180),
@@ -42,25 +50,28 @@ public class PartCastingMeltingProvider implements DataProvider {
     );
 
     private static final List<Metal> METALS = List.of(
-            new Metal("iron", 900, true),
-            new Metal("copper", 900, true),
-            new Metal("aluminum", 660, false),
-            new Metal("brass", 930, false),
-            new Metal("bronze", 950, false),
-            new Metal("constantan", 1220, false),
-            new Metal("electrum", 1000, false),
-            new Metal("enderium", 1450, false),
-            new Metal("invar", 1420, false),
-            new Metal("lead", 327, false),
-            new Metal("lumium", 1000, false),
-            new Metal("nickel", 1450, false),
-            new Metal("osmium", 3000, false),
-            new Metal("platinum", 1768, false),
-            new Metal("signalum", 1000, false),
-            new Metal("silver", 960, false),
-            new Metal("tin", 230, false),
-            new Metal("uranium", 1130, false),
-            new Metal("zinc", 419, false)
+            new Metal("iron", 900, NO_MODS),
+            new Metal("copper", 900, NO_MODS),
+            new Metal("aluminum", 660, ORE_MODS),
+            new Metal("brass", 930, ORE_MODS),
+            new Metal("bronze", 950, ORE_MODS),
+            new Metal("constantan", 1220, ORE_MODS),
+            new Metal("electrum", 1000, ORE_MODS),
+            new Metal("enderium", 1450, ORE_MODS),
+            new Metal("invar", 1420, ORE_MODS),
+            new Metal("lead", 327, ORE_MODS),
+            new Metal("lumium", 1000, ORE_MODS),
+            new Metal("nickel", 1450, ORE_MODS),
+            new Metal("osmium", 3000, ORE_MODS),
+            new Metal("platinum", 1768, ORE_MODS),
+            new Metal("signalum", 1000, ORE_MODS),
+            new Metal("silver", 960, ORE_MODS),
+            new Metal("tin", 230, ORE_MODS),
+            new Metal("uranium", 1130, ORE_MODS),
+            new Metal("zinc", 419, ORE_MODS),
+            new Metal("adamantite", 2000, ARMORY_MODS),
+            new Metal("aeternium", 2000, ARMORY_MODS),
+            new Metal("aurichalcum", 2000, ARMORY_MODS)
     );
 
     private static int timeFor(int cost) {
@@ -152,14 +163,19 @@ public class PartCastingMeltingProvider implements DataProvider {
 
     private static void addConditions(JsonObject json, Metal metal) {
         if (metal.vanilla()) return;
-        JsonArray or = new JsonArray();
-        or.add(modLoaded("alltheores"));
-        or.add(modLoaded("ftbmaterials"));
-        JsonObject orCond = new JsonObject();
-        orCond.addProperty("type", "neoforge:or");
-        orCond.add("values", or);
         JsonArray conditions = new JsonArray();
-        conditions.add(orCond);
+        if (metal.mods().size() == 1) {
+            conditions.add(modLoaded(metal.mods().get(0)));
+        } else {
+            JsonArray or = new JsonArray();
+            for (String modid : metal.mods()) {
+                or.add(modLoaded(modid));
+            }
+            JsonObject orCond = new JsonObject();
+            orCond.addProperty("type", "neoforge:or");
+            orCond.add("values", or);
+            conditions.add(orCond);
+        }
         json.add("neoforge:conditions", conditions);
     }
 
